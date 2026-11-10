@@ -1,5 +1,5 @@
-# SafeHeal Cloud: public mock showcase and password-protected private Nemotron demo.
-# Keep AI_MODE=mock; the separate team-only endpoint performs real inference.
+# SafeHeal Cloud: public mock analysis and optional public Nemotron demo.
+# Keep AI_MODE=mock; only the fixed synthetic live endpoint runs paid inference.
 services:
   - type: web
     name: safeheal-cloud
@@ -16,5 +16,9 @@ services:
         value: mock
       - key: SAFEHEAL_DEMO_PASSWORD
         sync: false
+      - key: SAFEHEAL_ALLOW_LIVE_DEMO
+        value: "true"
+      - key: SAFEHEAL_MAX_LIVE_ANALYSES_PER_HOUR
+        value: "12"
       - key: NEBIUS_MODEL
         value: nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B
