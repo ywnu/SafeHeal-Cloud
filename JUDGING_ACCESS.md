@@ -1,27 +1,24 @@
 # SafeHeal Cloud — Judge Testing Guide
 
-**Public demo:** https://safeheal-cloud.onrender.com
+**Public demo:** https://safeheal-cloud.onrender.com/
 
-SafeHeal has two separate flows. The public **AI Investigation → Load demo Dockerfile + logs → Start AI Investigation** runs deterministic **mock** analysis, needs no login, and does not incur Nebius charges. To verify the actual NVIDIA model integration, use the separate **Run real Nemotron** action with judge-only credentials configured by the project team.
+Visitors do **not** need a username or password. The platform offers two explicit paths:
 
-## Set up judge-only access (team administrator)
+1. **AI Investigation → Load Classic demo Dockerfile + logs → Start AI Investigation:** free mock analysis, no Nebius charge.
+2. **AI Investigation → Run real Nemotron → confirm:** a real Nebius inference request on fixed server-side Classic synthetic evidence. The result should show `ai.source = "nebius"`. The model response is not guaranteed to pass independent static patch review.
 
-1. Keep `AI_MODE=mock` on Render so anonymous visitors cannot trigger paid inference.
-2. In Render's *server-side* environment settings for the existing web service, retain `SAFEHEAL_DEMO_PASSWORD` for team administrators, and configure a **different** `SAFEHEAL_JUDGE_USERNAME` (not the team username, which defaults to `demo`) and a randomly generated `SAFEHEAL_JUDGE_PASSWORD` of at least **16 characters**. Both values must be set together. Never put real values in Git, source code, the HTML, screenshots or this guide.
-3. For real inference, also configure the server-side `NEBIUS_API_KEY`, `NEBIUS_MODEL`, and `SAFEHEAL_ALLOW_LIVE_DEMO=true`. The public service remains in mock mode. Confirm these are configured without sharing their values.
-4. Decide on and enforce a **provider-side credit/spend allowance** appropriate for judging. `SAFEHEAL_MAX_LIVE_ANALYSES_PER_HOUR` defaults to two calls/hour, shared between team and judges, **per running process**. It is not a hard billing cap and resets on restart. A leaked judge password can still incur Nebius charges until access is disabled or quota is exhausted.
-5. Test from a private/incognito browser session after Render redeploys. Visit `https://safeheal-cloud.onrender.com/web/unlock`, enter the **judge** username/password in the browser's Basic Auth prompt, click **Open AI Investigation** on the access-confirmation page, then choose **Private Team Access → Run real Nemotron**. The login link and navigation do not initiate a paid inference. Confirm the charge warning once.
-6. Verify `ai.source = "nebius"` and the displayed findings. **Completed inference does not prove the suggested Dockerfile is valid**; inspect static checks. Judge access is intentionally limited to `GET /web/unlock` and `POST /web/team-nebius-demo`. It cannot read private raw event feeds, API docs or arbitrary private backend routes.
+The public real-model flow requires `SAFEHEAL_ALLOW_LIVE_DEMO=true`, a valid server-side `NEBIUS_API_KEY`, and `NEBIUS_MODEL` in Render's environment settings. It can return HTTP 503 if not configured and HTTP 429 after the per-process call limit. The default live limit is 12 calls/hour per process; it is **not** a billing cap, and real requests use credits. Do not expose the Nebius key in the frontend or repository. If available, impose a provider-side spend allowance.
 
-## Information for the Devpost testing instructions (English)
+The public real-model endpoint uses **only built-in synthetic Dockerfile and three attack-log events**; it does not accept arbitrary user uploads. The Extended (16-event) monitoring sample is an independent explorer, not input to the fixed model route. The app never executes proposed Dockerfiles, applies patches, or blocks real IP addresses; any defensive actions are simulated. Public live telemetry is anonymized. Private raw feeds and API docs remain authenticated.
 
-- **Website:** https://safeheal-cloud.onrender.com
-- **Anonymous workflow:** AI Investigation → Load demo Dockerfile + logs → Start AI Investigation. Results are marked MOCK.
-- **Real-model workflow:** Open https://safeheal-cloud.onrender.com/web/unlock and authenticate using the separately supplied **judge-only** login credentials; click **Open AI Investigation** on the confirmation page, then **Private Team Access → Run real Nemotron**. Allow the inference to finish; inspect `ai.source: nebius`, the findings, event correlations, proposed patch and independent static-review status.
-- **Input scope:** Both the private live demo and the public mock demo use bundled **Classic** synthetic evidence (3 events); the separate **Extended** monitoring scenario (16 events) is an independent sample explorer and does **not** feed the fixed server-side AI routes. Results show an evidence-source label. Judge access does not allow uploading private Dockerfiles for live AI analysis.
-- **Safety limitations:** No proposed Dockerfile is built, deployed or executed; defensive actions are simulations. Real runs use Nebius credits and may be rate-limited.
-- **Credential delivery:** The project representative must supply the correct judge-only username/password via Devpost testing instructions in the manner allowed by the platform. Check whether the field is publicly visible before entering credentials; **never use the team admin password or Nebius API key**. If a credential might be exposed publicly, assume anyone could use it and rely on provider-level spending controls, rotation and monitoring.
+## Devpost testing instructions
 
-**Availability:** The official rules require the project to remain accessible for judging until **December 15, 2026**. Ensure hosting, credentials and provider credits remain available through that date. If access is disabled by rate limits, spend limits or expired credentials, judges may not be able to test real inference.
+- **Website:** https://safeheal-cloud.onrender.com/
+- **Login:** Not required for the public demo or real Nemotron button.
+- **Real model:** AI Investigation → Run real Nemotron → confirm. Verify `ai.source: nebius`, then inspect findings, correlations, proposed patch, and static review.
+- **Free fallback:** Load Classic demo → Start AI Investigation, marked MOCK.
+- **Known limitations:** Fixed synthetic evidence for live inference, application-side rate limits, and possible model/provider or hosting errors. No production blocking or patch execution.
 
-The judge credentials are **not embedded in this repository**. A correct GitHub deployment alone does not enable judge access: the Render environment variables, credits, and completed Devpost instructions must also be in place.
+For anyone on the project team needing protected admin routes, separate team credentials still exist; they must not be published or shared with general visitors.
+
+**Availability:** The original rules in this project require the demo to remain accessible for judging until **December 15, 2026**. Verify the published Render service, server-side environment variables, live-model credits and model results before submitting the link.
