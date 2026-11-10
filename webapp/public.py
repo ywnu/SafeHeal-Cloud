@@ -3,8 +3,9 @@
 The original webapp.run remains strictly localhost-only. Use this separate
 entrypoint for HTTPS deployments behind a reverse proxy such as Render.
 
-Anyone can view the site and run *mock* analysis. Real Nebius analysis and
-private event APIs require a password; public live telemetry is anonymized.
+Anyone can view the site, run mock analysis, and explicitly request real Nebius
+analysis of bundled synthetic evidence when enabled. Other private API routes
+still require a password; public live telemetry is anonymized.
 This is not production-grade authentication, logging, or billing enforcement.
 """
 from __future__ import annotations
@@ -108,9 +109,9 @@ def _allow_analysis() -> bool:
 def _allow_live_analysis() -> bool:
     """Separate small rate limit for paid inference (per worker, not a budget cap)."""
     try:
-        limit = max(1, min(5, int(os.getenv("SAFEHEAL_MAX_LIVE_ANALYSES_PER_HOUR", "2"))))
+        limit = max(1, min(30, int(os.getenv("SAFEHEAL_MAX_LIVE_ANALYSES_PER_HOUR", "12"))))
     except ValueError:
-        limit = 2
+        limit = 12
     now = time.monotonic()
     with _attempts_lock:
         while _live_attempts and _live_attempts[0] <= now - WINDOW_SECONDS:
@@ -161,6 +162,10 @@ PUBLIC_GET_PATHS = frozenset({
 
 
 def _is_public_request(request: Request) -> bool:
+    if request.method == "POST" and request.url.path == "/web/team-nebius-demo":
+        # This route processes fixed bundled synthetic evidence only. It is
+        # separately opt-in, server-configured and rate-limited below.
+        return True
     if request.method == "GET" and request.url.path in PUBLIC_GET_PATHS:
         return True
     if request.method == "POST" and request.url.path == "/api/analyze":
@@ -212,13 +217,13 @@ async def protect_public_demo(request: Request, call_next):
             )
 
     if request.method == "POST" and request.url.path == "/web/team-nebius-demo":
-        # Require a genuine same-origin browser request as well as Basic Auth.
-        # A cross-site form must not trigger an inference using cached credentials.
+        # Cross-origin browser requests must not trigger paid inference.
+        # No credentials or uploaded data are accepted by this public route.
         origin = request.headers.get("origin")
         if origin and origin != f"https://{request.headers.get('host', '')}":
             return JSONResponse(status_code=403, content={"detail": "Invalid request origin"})
         if os.getenv("SAFEHEAL_ALLOW_LIVE_DEMO", "").lower() not in {"1", "true"}:
-            return JSONResponse(status_code=503, content={"detail": "Team Nebius demo is disabled"})
+            return JSONResponse(status_code=503, content={"detail": "Real Nemotron demo is not enabled on this server"})
         settings = get_settings()
         if not settings.api_key or not settings.model:
             return JSONResponse(status_code=503, content={"detail": "Nebius server configuration is incomplete"})
@@ -287,7 +292,7 @@ async def demo_analysis():
 
 @app.post("/web/team-nebius-demo", include_in_schema=False)
 async def team_nebius_demo():
-    """Authenticated team/judge Nemotron inference on fixed synthetic evidence.
+    """Public, opt-in, rate-limited Nemotron inference on fixed synthetic evidence.
 
     There is intentionally no upload body here; the hosting edge may reject
     the insecure demonstration Dockerfile and attack strings. The ordinary
