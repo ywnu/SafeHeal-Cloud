@@ -57,7 +57,10 @@ def test_private_routes_still_require_password(path):
     with TestClient(app) as client:
         response = client.get(path)
     assert response.status_code == 401
-    assert "Basic" in response.headers["www-authenticate"]
+    if path == "/web/unlock":
+        assert "Basic" in response.headers["www-authenticate"]
+    else:
+        assert "www-authenticate" not in response.headers
 
 
 def test_bad_credentials_do_not_unlock_private_routes():
@@ -260,7 +263,7 @@ def test_real_nebius_analysis_requires_password_without_calling_nebius(monkeypat
             files={"dockerfile": ("Dockerfile", b"FROM alpine\n")},
         )
     assert response.status_code == 401
-    assert "Basic" in response.headers["www-authenticate"]
+    assert "www-authenticate" not in response.headers
 
 
 def test_public_mock_analysis_rate_limit(monkeypatch):
