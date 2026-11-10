@@ -183,8 +183,12 @@ async def protect_public_demo(request: Request, call_next):
                 status_code=401,
                 content={"detail": "Private demo credentials required for this endpoint"},
                 headers={
-                    "WWW-Authenticate": 'Basic realm="SafeHeal Cloud Private Demo", charset="UTF-8"',
                     "Cache-Control": "no-store",
+                    **(
+                        {"WWW-Authenticate": 'Basic realm="SafeHeal Cloud Private Demo", charset="UTF-8"'}
+                        if request.url.path == "/web/unlock"
+                        else {}
+                    ),
                 },
             )
         if judge_authenticated and not _judge_route(request):
