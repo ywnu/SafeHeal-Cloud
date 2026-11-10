@@ -9,7 +9,7 @@ This folder contains the browser smoke test that verifies the integrated **publi
 ## What it verifies
 
 1. Public homepage loads and connects to the backend without a login.
-2. Unauthenticated access to the private Nemotron route is rejected.
+2. Real Nemotron is unavailable (HTTP 503) when explicitly disabled; the offline E2E never incurs paid inference.
 3. The built-in Dockerfile and synthetic logs load, and mock analysis completes.
 4. Findings, event correlations, proposed patch and static checks appear.
 5. Docker Security shows the proposed Dockerfile/diff.
