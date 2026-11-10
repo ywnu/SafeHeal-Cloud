@@ -288,35 +288,37 @@ def test_missing_password_fails_closed(monkeypatch):
             pass
 
 
-def test_team_nebius_demo_requires_auth():
+def test_public_nebius_demo_requires_explicit_opt_in():
     with TestClient(app) as client:
         response = client.post("/web/team-nebius-demo")
-    assert response.status_code == 401
+    assert response.status_code == 503
+    assert "not enabled" in response.json()["detail"]
+    assert "www-authenticate" not in response.headers
 
 
 def test_team_nebius_demo_fails_closed_when_not_enabled():
     with TestClient(app) as client:
         response = client.post("/web/team-nebius-demo", headers=credentials())
     assert response.status_code == 503
-    assert "disabled" in response.json()["detail"]
+    assert "not enabled" in response.json()["detail"]
 
 
 def test_team_nebius_demo_requires_configuration(monkeypatch):
     monkeypatch.setenv("SAFEHEAL_ALLOW_LIVE_DEMO", "true")
     with TestClient(app) as client:
-        response = client.post("/web/team-nebius-demo", headers=credentials())
+        response = client.post("/web/team-nebius-demo")
     assert response.status_code == 503
     assert "configuration" in response.json()["detail"]
 
 
-def test_team_nebius_demo_rejects_cross_origin(monkeypatch):
+def test_public_nebius_demo_rejects_cross_origin(monkeypatch):
     monkeypatch.setenv("SAFEHEAL_ALLOW_LIVE_DEMO", "true")
     monkeypatch.setenv("NEBIUS_API_KEY", "dummy-not-real")
     monkeypatch.setenv("NEBIUS_MODEL", "test-model")
     with TestClient(app) as client:
         response = client.post(
             "/web/team-nebius-demo",
-            headers={**credentials(), "Origin": "https://evil.example"},
+            headers={"Origin": "https://evil.example"},
         )
     assert response.status_code == 403
 
@@ -350,7 +352,7 @@ def test_team_nebius_demo_injects_live_settings_without_mutating_public_mode(mon
 
     monkeypatch.setattr("webapp.public.analyze_evidence", fake_analyze)
     with TestClient(app) as client:
-        live = client.post("/web/team-nebius-demo", headers=credentials())
+        live = client.post("/web/team-nebius-demo")
         public = client.get("/web/demo-analysis")
     assert live.status_code == 200
     assert live.json()["ai"]["source"] == "nebius"
@@ -372,12 +374,28 @@ def test_team_nebius_demo_uses_separate_rate_limit(monkeypatch):
         "ai": {"source": "nebius", "error": {"code": "test_error", "message": "fake"}, "patch_status": "none"},
     })
     with TestClient(app) as client:
-        first = client.post("/web/team-nebius-demo", headers=credentials())
-        second = client.post("/web/team-nebius-demo", headers=credentials())
+        first = client.post("/web/team-nebius-demo")
+        second = client.post("/web/team-nebius-demo")
         public = client.get("/web/demo-analysis")
     assert first.status_code == 200
     assert second.status_code == 429
     assert public.status_code == 200
+
+def test_enabling_public_live_keeps_private_routes_protected(monkeypatch):
+    monkeypatch.setenv("SAFEHEAL_ALLOW_LIVE_DEMO", "true")
+    monkeypatch.setenv("NEBIUS_API_KEY", "dummy-not-real")
+    monkeypatch.setenv("NEBIUS_MODEL", "test-model")
+    with TestClient(app) as client:
+        private = client.get("/api/live-events")
+        docs = client.get("/docs")
+        unlock = client.get("/web/unlock")
+    assert private.status_code == 401
+    assert docs.status_code == 401
+    assert "www-authenticate" not in private.headers
+    assert "www-authenticate" not in docs.headers
+    assert unlock.status_code == 401
+    assert "Basic" in unlock.headers["www-authenticate"]
+
 
 def test_private_button_has_branded_spacing_and_confirmation():
     with TestClient(app) as client:
