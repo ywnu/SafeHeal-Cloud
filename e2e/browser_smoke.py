@@ -79,9 +79,10 @@ def main() -> None:
                 page.goto(url, wait_until="domcontentloaded", timeout=20000)
                 expect(page.locator("#modeText")).to_have_text("BACKEND CONNECTED", timeout=15000)
 
-                # Protected private AI route must fail closed; do not invoke model.
-                unauthorized = page.request.post(url + "/web/team-nebius-demo")
-                assert unauthorized.status == 401, unauthorized.status
+                # Real AI is unavailable unless explicitly enabled on the server.
+                # This offline E2E must never send live model requests.
+                disabled = page.request.post(url + "/web/team-nebius-demo")
+                assert disabled.status == 503, disabled.status
                 assert page.request.get(url + "/web/unlock").status == 401
 
                 # UI navigation, browser-side loading, actual backend mock,
@@ -194,7 +195,7 @@ def main() -> None:
                 assert "MOCK" in recovering_page.locator("#analysisModeLabel").inner_text()
                 recovering_page.close()
 
-                print("PASS: real Chromium browser mock E2E, Classic scenario alignment, automatic cold-start recovery, export and private-route protection.")
+                print("PASS: real Chromium browser mock E2E, Classic scenario alignment, automatic cold-start recovery, export and disabled-live-route protection.")
             finally:
                 browser.close()
     finally:

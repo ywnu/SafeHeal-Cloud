@@ -25,13 +25,13 @@ This folder contains the working SafeHeal Cloud browser dashboard and the FastAP
 
 ## How it connects
 
-The UI requests `GET /web/demo-analysis` for server-side bundled mock evidence or `POST /api/analyze` for user-provided Dockerfile and optional logs. The gateway delegates analysis to the backend and AI services. The private `POST /web/team-nebius-demo` requires Basic authentication, explicit server opt-in and server-side Nebius configuration; it is not available anonymously.
+The UI requests `GET /web/demo-analysis` for server-side bundled mock evidence or `POST /api/analyze` for user-provided Dockerfile and optional logs. The gateway delegates analysis to the backend and AI services. The public `POST /web/team-nebius-demo` runs real Nemotron against fixed bundled synthetic evidence, with an explicit server opt-in, server-side Nebius configuration, and a small rate limit. It does **not** accept user uploads or expose the API key.
 
-The website must remain `AI_MODE=mock` on public Render. Do **not** store the Nebius key or team password in JavaScript, HTML or Git. Custom uploads may be stopped by a hosting gateway.
+The website must remain `AI_MODE=mock` on public Render, even when the separate fixed-evidence real inference button is enabled. Do **not** store the Nebius key or team password in JavaScript, HTML or Git. Custom uploads may be stopped by a hosting gateway.
 
-## Judge-only real inference
+## Public real inference
 
-For hackathon judging, configure a **different** `SAFEHEAL_JUDGE_USERNAME` and `SAFEHEAL_JUDGE_PASSWORD` (16+ characters) server-side, alongside the protected Nebius runtime configuration. Judge credentials are scoped to `/web/unlock` and `/web/team-nebius-demo` only. They cannot access protected telemetry or unrelated backend routes. Public access remains mock-only and free. See [judging guide](../JUDGING_ACCESS.md). Never commit credentials or expose them in the browser code; per-process throttling does not cap costs.
+Visitors open the home page and choose **AI Investigation → Run real Nemotron**, then confirm the credit-using request. Configure `SAFEHEAL_ALLOW_LIVE_DEMO=true`, `NEBIUS_API_KEY` and `NEBIUS_MODEL` on Render. `SAFEHEAL_MAX_LIVE_ANALYSES_PER_HOUR` defaults to 12 calls/hour per process (maximum 30), not a global or provider-side spending cap. Team-only event feeds and API docs still require authentication. See the [judging guide](../JUDGING_ACCESS.md). Never commit credentials or expose them in browser code.
 
 ## Run and test
 

@@ -30,11 +30,11 @@ Create a **Web Service** connected to `ywnu/SafeHeal-Cloud` and choose:
 | `SAFEHEAL_DEMO_USERNAME` | Optional, defaults to `demo` |
 | `SAFEHEAL_JUDGE_USERNAME` | Optional separate judge-only username, different from the team username |
 | `SAFEHEAL_JUDGE_PASSWORD` | Optional judge-only password, at least 16 characters; both judge variables must be set together |
-| `NEBIUS_API_KEY` | Secret API key; needed for private real AI only |
+| `NEBIUS_API_KEY` | Secret API key; needed for real Nemotron inference (never exposed to browser) |
 | `NEBIUS_MODEL` | `nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B` |
-| `SAFEHEAL_ALLOW_LIVE_DEMO` | `true` only when the team wants to enable private real inference |
+| `SAFEHEAL_ALLOW_LIVE_DEMO` | `true` to enable rate-limited public Nemotron on fixed bundled evidence |
 | `SAFEHEAL_MAX_ANALYSES_PER_HOUR` | Optional public/mock cap; default 40/hour in mock mode |
-| `SAFEHEAL_MAX_LIVE_ANALYSES_PER_HOUR` | Optional private live cap; default 2/hour |
+| `SAFEHEAL_MAX_LIVE_ANALYSES_PER_HOUR` | Optional real-model cap; default 12/hour, max 30/hour per process |
 
 These limits are **in-memory and per process**; they are not billing guarantees. Rotate exposed secrets, keep all keys out of GitHub and frontend JavaScript, and consider provider-side limits on Nebius credit spending.
 
@@ -49,25 +49,21 @@ After Render shows **Live**, open the URL in an **incognito window**. It should 
 
 The public demo runs a **server-side** `GET /web/demo-analysis` and does not upload the intentionally risky example through the browser. Hosting-edge protection can still return HTML `403 Blocked` for *custom* multipart uploads to `POST /api/analyze`. Do not bypass hosting security to force uploads.
 
-## Test the real private Nemotron demo
+## Test the public real Nemotron demo (no password)
 
-**Keep global `AI_MODE=mock`.** The separate private endpoint forces a real inference for authorized team members while leaving public/mock requests free.
+**Keep global `AI_MODE=mock`.** The real AI button uses the separate fixed-input endpoint `POST /web/team-nebius-demo`. Ordinary uploaded-file analysis and the mock sample remain mock-only; unrelated private endpoints retain authentication.
 
-1. Confirm `SAFEHEAL_ALLOW_LIVE_DEMO=true`, `NEBIUS_API_KEY`, `NEBIUS_MODEL` and a strong `SAFEHEAL_DEMO_PASSWORD` in Render.
-2. Visit https://safeheal-cloud.onrender.com/web/unlock and sign in using the private credentials (username defaults to `demo`).
-3. Return to **AI Investigation**, select **Private Team Access → Run real Nemotron**, and accept the confirmation **once**.
-4. Examine `status`, `ai.source` and the **Proposed patch** review independently. A `COMPLETED` model response does not prove its patch is valid.
-5. Export the result for internal review. Avoid sharing sensitive values or raw authorization headers.
+1. On Render, set `SAFEHEAL_ALLOW_LIVE_DEMO=true`, `NEBIUS_API_KEY`, and `NEBIUS_MODEL`. Set `SAFEHEAL_MAX_LIVE_ANALYSES_PER_HOUR` for the expected number of visitors. If Render is not deploying through the Blueprint, the `render.yaml` settings do **not** automatically change existing environment variables.
+2. Visit https://safeheal-cloud.onrender.com/ in a new incognito window, without signing in.
+3. Select **AI Investigation → Run real Nemotron**, confirm the credit-using request, and let inference complete.
+4. Verify that the result status is **COMPLETED** and `ai.source` equals `nebius`, not `mock`. Examine independent static patch-review results instead of assuming a generated patch is safe.
+5. If the endpoint responds with 503, confirm the live-demo setting and server-side Nebius configuration. HTTP 429 means the server's per-process live call limit was reached. Network errors or model errors may still occur; mock analysis remains available.
 
-The private request has **no browser-uploaded Dockerfile body**; the server loads bundled synthetic examples directly. Real inference can **consume Nebius credits**. The per-process two-calls/hour default is *not* a provider-side spending cap.
+**The public live button is intentionally restricted to bundled synthetic Dockerfile and three synthetic log events.** It accepts no browser-uploaded files. The app does not apply patches or block real IP addresses. Real requests consume Nebius credits. The 12/hour default is an in-memory per-process throttle, **not a spending cap**; set an actual provider-side spending allowance if available, and avoid putting keys in Git or client-side code.
 
-## Judge access for Devpost
+## Sharing with judges
 
-**Do not give judges the team administration password.** Scoped judge credentials can be enabled in Render by setting `SAFEHEAL_JUDGE_USERNAME` and `SAFEHEAL_JUDGE_PASSWORD` (at least 16 characters). They allow browser authentication at `/web/unlock` and the fixed synthetic-evidence `/web/team-nebius-demo` only. They do **not** open private raw events, arbitrary backend endpoints or the team administrative area.
-
-Judge access still requires `SAFEHEAL_ALLOW_LIVE_DEMO=true`, `NEBIUS_API_KEY` and `NEBIUS_MODEL` in Render's server environment. **Keep `AI_MODE=mock`** for the public web application. The private route runs one real Nemotron inference per authorized request, billed against Nebius credits. Application request throttling is per process and is **not a financial spending limit**.
-
-Before sharing credentials with judges, enforce Nebius-side spending limits if available, verify the login and real-model workflow in an incognito browser, and check whether the Devpost testing-instructions field is publicly visible. Do not put any real credentials in GitHub, screenshots or the public project description. Keep the demo accessible through the end of judging on **December 15, 2026**. Detailed instructions: [JUDGING_ACCESS.md](JUDGING_ACCESS.md).
+Share **https://safeheal-cloud.onrender.com/** only. The dashboard and fixed-data real Nemotron demonstration do not require a username or password. Team administration, raw event feeds, and private backend routes remain restricted. For a judge, the clearest path is **AI Investigation → Run real Nemotron**. Judges should see the model source `NEBIUS` in the resulting analysis. Keep the public instance available through the required judging period. See [JUDGING_ACCESS.md](JUDGING_ACCESS.md).
 
 ## Hosting constraints and verification
 

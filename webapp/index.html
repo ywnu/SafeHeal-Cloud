@@ -93,21 +93,21 @@
               <div class="small-divider"></div>
               <button class="btn btn-soft full-width" id="loadDemo"><span data-icon="sparkles"></span> Load Classic demo Dockerfile + logs</button>
               <button class="btn btn-primary full-width big-cta" id="analyzeBtn"><span data-icon="play"></span> Start AI investigation <span class="right-arrow">→</span></button>
-              <section class="team-access-panel" aria-label="Private AI investigation">
-                <div class="team-access-divider"><span>PRIVATE TEAM ACCESS</span></div>
+              <section class="team-access-panel" aria-label="Real Nemotron AI investigation">
+                <div class="team-access-divider"><span>REAL AI · NO SIGN-IN</span></div>
                 <div class="team-access-header">
                   <span class="team-access-mark" data-icon="shield"></span>
-                  <div class="team-access-copy"><strong>Real AI investigation</strong><small>Authenticated team members only</small></div>
+                  <div class="team-access-copy"><strong>Real AI investigation</strong><small>Public demo · bundled synthetic evidence only</small></div>
                   <span class="team-access-badge">LIVE AI</span>
                 </div>
                 <button class="team-nebius-button" id="teamNebiusBtn" type="button">
-                  <span class="team-nebius-button-icon" data-icon="lock"></span>
+                  <span class="team-nebius-button-icon" data-icon="sparkles"></span>
                   <span class="team-nebius-button-label">Run real Nemotron</span>
                   <span class="team-nebius-arrow" aria-hidden="true">↗</span>
                 </button>
-                <p class="team-access-note">Powered by Nebius · Uses team credits</p>
+                <p class="team-access-note">Powered by Nebius · Real model · Limited requests</p>
               </section>
-              <p class="panel-help">Public analysis uses mock AI. Proposed changes are never executed.</p>
+              <p class="panel-help">Start AI investigation uses mock analysis. Run real Nemotron above for a live model response on the built-in demo. Proposed changes are never executed.</p>
               <div id="analysisStatus" class="analysis-status" role="status" aria-live="polite">Ready when you are.</div>
             </section>
             <section class="panel results-panel"><div class="panel-head"><div><div class="panel-eyebrow">02 / ASSESSMENT</div><h2>Investigation results</h2></div><div id="resultStatus" class="result-state muted-state">NOT RUN</div></div>
@@ -150,10 +150,10 @@
   <div id="modal" class="modal-backdrop" hidden><div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="modal-header"><h2 id="modalTitle">Finding details</h2><button id="modalClose" aria-label="Close" class="icon-button"><span data-icon="x"></span></button></div><div id="modalBody" class="modal-body"></div><div class="modal-footer"><button class="btn btn-soft" id="modalDismiss">Close</button></div></div></div>
   <dialog id="teamConfirmDialog" class="team-confirm-dialog" aria-labelledby="teamConfirmTitle" aria-describedby="teamConfirmDescription">
     <div class="team-confirm-symbol" data-icon="shield"></div>
-    <div class="team-confirm-kicker">PRIVATE · LIVE NEMOTRON</div>
+    <div class="team-confirm-kicker">PUBLIC · LIVE NEMOTRON</div>
     <h2 id="teamConfirmTitle">Start a real AI investigation?</h2>
     <p id="teamConfirmDescription">This analyzes built-in demo evidence using the real Nebius model and may consume your team's AI credits.</p>
-    <div class="team-confirm-assurance"><span data-icon="lock"></span> Only authorized team members can run this. No changes are applied to containers.</div>
+    <div class="team-confirm-assurance"><span data-icon="shield"></span> Uses fixed synthetic evidence only. No changes are applied to containers.</div>
     <form method="dialog" class="team-confirm-actions">
       <button class="btn btn-ghost" type="submit" value="cancel">Cancel</button>
       <button class="btn btn-primary" type="submit" value="confirm"><span data-icon="play"></span> Run live analysis</button>

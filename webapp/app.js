@@ -159,7 +159,7 @@ async function analyze(){if(state.loading)return;if(!state.dockerfile){toast('Ch
     state.analysis=data;state.analysisEvidence=state.demoLoaded?'Classic demo · 3 bundled synthetic events (server-side)':state.logs?'Uploaded Dockerfile + uploaded JSON event logs':'Uploaded Dockerfile only · no event logs';renderAnalysis();renderDocker();renderOverview();if(data.status==='ai_error'){status(`AI returned an error: ${data.ai?.error?.message||'Check backend configuration'}`,'error');toast('Backend returned an AI error; no findings or patch were fabricated.',true)}else{status('Investigation complete. Review findings and static checks.','success');toast('Investigation completed — review before using any suggested patch.')}}catch(e){state.analysis=null;state.analysisEvidence=null;renderAnalysis();status(`Request failed: ${e.message}`,'error');toast(`Analysis failed: ${e.message}`,true)}finally{state.loading=false;$('analyzeBtn').disabled=false;$('analyzeBtn').innerHTML=ICON('play')+' Start AI investigation <span class="right-arrow">→</span>'}}
 function confirmRealAI(){
  const dialog=$('teamConfirmDialog');
- if(!dialog||typeof dialog.showModal!=='function')return Promise.resolve(window.confirm('Run real Nebius? This may use team credits.'));
+ if(!dialog||typeof dialog.showModal!=='function')return Promise.resolve(window.confirm('Run real Nebius? This uses team credits and is limited.'));
  if(dialog.open)return Promise.resolve(false);
  dialog.returnValue='cancel';
  return new Promise(resolve=>{
@@ -178,15 +178,15 @@ async function teamLiveDemo(){
  if(!await confirmRealAI())return;
  await loadDemo();
  state.loading=true;$('analyzeBtn').disabled=true;setTeamButtonLoading(true);
- status('Requesting private Nebius analysis. Model inference can take time.');$('resultStatus').textContent='PROCESSING';$('resultStatus').className='result-state muted-state';
+ status('Requesting real Nemotron analysis. Model inference can take time.');$('resultStatus').textContent='PROCESSING';$('resultStatus').className='result-state muted-state';
  try{
    const data=await request('/web/team-nebius-demo',{method:'POST',timeout:180000});
    state.analysis=data;state.analysisEvidence='Classic demo · 3 bundled synthetic events (server-side Nemotron)';renderAnalysis();renderDocker();renderOverview();
    if(data.status==='completed'){status('Real Nemotron analysis finished. Review patch and static checks.','success');toast('Live Nebius investigation complete.')}
    else{status('Nebius returned an error: '+(data.ai?.error?.message||'See report.'),'error');toast('Real Nebius analysis failed.',true)}
  }catch(e){
-   status('Team-only live request failed: '+e.message+' — sign in at /web/unlock or check Render environment.','error');
-   toast('Team-only live analysis unavailable. Public mock is unaffected.',true)
+   status('Real Nemotron request failed: '+e.message+'. The demo may be unavailable or at its usage limit.','error');
+   toast('Real Nemotron is unavailable right now. Mock analysis still works.',true)
  }finally{
    state.loading=false;$('analyzeBtn').disabled=false;setTeamButtonLoading(false);
  }
