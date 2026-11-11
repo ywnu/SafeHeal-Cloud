@@ -24,7 +24,7 @@ from pathlib import Path
 from threading import Lock
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from starlette.concurrency import run_in_threadpool
 from ai.config import get_settings, load_dotenv
 from ai.service import analyze_evidence
@@ -182,6 +182,17 @@ async def protect_public_demo(request: Request, call_next):
     judge_authenticated = (
         not team_authenticated and _valid_judge_basic_auth(auth_header)
     )
+    # Old judge links pointed to /web/unlock and triggered the browser's
+    # native password dialog. Public judges now use the home page instead.
+    # Retain the old authenticated landing page for explicit team credentials.
+    if (
+        request.method == "GET"
+        and request.url.path == "/web/unlock"
+        and not (team_authenticated or judge_authenticated)
+    ):
+        return RedirectResponse(
+            url="/", status_code=302, headers={"Cache-Control": "no-store"}
+        )
     if not _is_public_request(request):
         if not team_authenticated and not judge_authenticated:
             return JSONResponse(
