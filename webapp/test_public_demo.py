@@ -52,21 +52,34 @@ def test_public_routes_open_without_password(path):
     assert "www-authenticate" not in response.headers
 
 
-@pytest.mark.parametrize("path", ["/web/unlock", "/api/live-events", "/api/live-events/stream", "/docs", "/openapi.json"])
+@pytest.mark.parametrize("path", ["/api/live-events", "/api/live-events/stream", "/docs", "/openapi.json"])
 def test_private_routes_still_require_password(path):
     with TestClient(app) as client:
         response = client.get(path)
     assert response.status_code == 401
-    if path == "/web/unlock":
-        assert "Basic" in response.headers["www-authenticate"]
-    else:
-        assert "www-authenticate" not in response.headers
+    assert "www-authenticate" not in response.headers
 
 
-def test_bad_credentials_do_not_unlock_private_routes():
+def test_public_old_unlock_link_redirects_home_without_login():
     with TestClient(app) as client:
-        response = client.get("/web/unlock", headers=credentials(password="wrong-password"))
-    assert response.status_code == 401
+        redirect = client.get("/web/unlock", follow_redirects=False)
+        page = client.get("/web/unlock")
+    assert redirect.status_code == 302
+    assert redirect.headers["location"] == "/"
+    assert "www-authenticate" not in redirect.headers
+    assert page.status_code == 200
+    assert "SafeHeal" in page.text
+
+
+def test_bad_credentials_redirect_to_public_home():
+    with TestClient(app) as client:
+        response = client.get(
+            "/web/unlock",
+            headers=credentials(password="wrong-password"),
+            follow_redirects=False,
+        )
+    assert response.status_code == 302
+    assert response.headers["location"] == "/"
 
 
 def test_authorized_users_can_unlock_private_route():
@@ -117,13 +130,15 @@ def test_judges_cannot_access_other_private_endpoints(monkeypatch, method, path)
     assert response.status_code == 403
 
 
-def test_unconfigured_judge_credentials_do_not_work():
+def test_unconfigured_judge_credentials_cannot_unlock_private_page():
     with TestClient(app) as client:
         response = client.get(
             "/web/unlock",
             headers=credentials("judges", "judge-only-long-password-456"),
+            follow_redirects=False,
         )
-    assert response.status_code == 401
+    assert response.status_code == 302
+    assert response.headers["location"] == "/"
 
 
 @pytest.mark.parametrize("username,password", [
@@ -393,8 +408,8 @@ def test_enabling_public_live_keeps_private_routes_protected(monkeypatch):
     assert docs.status_code == 401
     assert "www-authenticate" not in private.headers
     assert "www-authenticate" not in docs.headers
-    assert unlock.status_code == 401
-    assert "Basic" in unlock.headers["www-authenticate"]
+    assert unlock.status_code == 200
+    assert "www-authenticate" not in unlock.headers
 
 
 def test_private_button_has_branded_spacing_and_confirmation():
