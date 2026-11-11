@@ -83,7 +83,10 @@ def main() -> None:
                 # This offline E2E must never send live model requests.
                 disabled = page.request.post(url + "/web/team-nebius-demo")
                 assert disabled.status == 503, disabled.status
-                assert page.request.get(url + "/web/unlock").status == 401
+                # Old password-protected links now take public visitors home.
+                old_link = page.request.get(url + "/web/unlock")
+                assert old_link.status == 200, old_link.status
+                assert "SafeHeal" in old_link.text()
 
                 # UI navigation, browser-side loading, actual backend mock,
                 # evidence, patch validation and report export.
